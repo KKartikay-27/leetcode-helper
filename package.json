@@ -1,0 +1,23 @@
+{
+  "name": "leetcode-chatbot",
+  "version": "1.0.0",
+  "description": "LeetCode Helper is a chat-based assistant designed to guide users through solving LeetCode problems. It provides hints, explanations, and discussions without giving direct answers.",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "concurrently \"cd backend && npm install\" \"cd frontend && npm install\"",
+    "start": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "start-backend": "cd backend && node server.js",
+    "start-frontend": "cd frontend && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KKartikay-27/leetcode-helper.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KKartikay-27/leetcode-helper/issues"
+  },
+  "homepage": "https://github.com/KKartikay-27/leetcode-helper#readme"
+}
