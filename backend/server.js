@@ -41,7 +41,7 @@ app.post("/start-session", async (req, res) => {
         9. Validate their thinking process and redirect when necessary
         10. Use Socratic method to guide rather than tell
         11. If the user writes something distracting or off-topic, gently bring them back to the LeetCode problem
-        
+        12. Be patient and honest about the user's progress
         IMPORTANT: Never reveal your internal analysis process to the user. After analyzing the problem, 
         immediately engage with the user as if you already understand the problem.
         Do not tell the user what you know about the problem - instead, ask them what they understand about it

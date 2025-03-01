@@ -1,6 +1,3 @@
-
-
-/* App.css */
 :root {
   --leetcode-green: #00b8a3;
   --leetcode-yellow: #ffc01e;
@@ -32,10 +29,11 @@ body {
 
 .app {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: hidden;
+  position: relative;
 }
 
 .app.light {
@@ -50,6 +48,7 @@ body {
   --button-hover: #00a192;
   --highlight-color: var(--leetcode-yellow);
   --header-bg: #ffffff;
+  --tab-bg: #f0f8ff;
 }
 
 .app.dark {
@@ -64,6 +63,7 @@ body {
   --button-hover: #1f6b61;
   --highlight-color: #d4a017;
   --header-bg: #262626;
+  --tab-bg: #3a3a3a;
 }
 
 .app.light {
@@ -76,6 +76,7 @@ body {
   color: var(--text-color);
 }
 
+/* Fixed header that stays at the top */
 .header {
   display: flex;
   justify-content: space-between;
@@ -83,7 +84,17 @@ body {
   padding: 16px 24px;
   background-color: var(--header-bg);
   border-bottom: 1px solid var(--border-color);
-  width: 100vw;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  height: 64px; /* Fixed height for calculations */
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .logo {
@@ -102,6 +113,35 @@ body {
   font-weight: 600;
 }
 
+.pinned-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--tab-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pinned-tab:hover {
+  background-color: var(--input-bg);
+}
+
+.tab-icon {
+  color: var(--leetcode-green);
+}
+
+.tab-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .theme-toggle {
   background: transparent;
   color: var(--text-color);
@@ -113,6 +153,7 @@ body {
   border-radius: 50%;
   cursor: pointer;
   transition: background-color 0.2s;
+  border: none;
 }
 
 .theme-toggle:hover {
@@ -123,11 +164,44 @@ body {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.chat-container {
-  width: 100vw;
-  flex: 1;
+/* Main content area - Flexbox setup for fixed header and footer */
+.main-content {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  padding-top: 64px; /* Same as header height */
+  padding-bottom: 0; /* Will be filled by input area */
+}
+
+/* Chat container with scrollable content */
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  position: relative;
+  padding-bottom: 16px; /* Space at bottom */
+}
+
+/* Messages container */
+.messages-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Increased gap for more space between messages */
+  width: 100%;
+  min-height: 100px;
+}
+
+/* Input area fixed at bottom */
+.input-area {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background-color: var(--chat-bg);
+  border-top: 1px solid var(--border-color);
+  z-index: 50;
+  padding: 16px 0;
 }
 
 .url-input-container {
@@ -135,11 +209,9 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
   width: 100%;
   text-align: center;
   padding: 24px;
-  flex: 1;
 }
 
 .url-input-container h2 {
@@ -186,16 +258,7 @@ body {
   background-color: var(--button-hover);
 }
 
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-
+/* Updated message styles for dynamic width */
 .message {
   display: flex;
   gap: 12px;
@@ -207,15 +270,16 @@ body {
 .user-message {
   background-color: var(--user-msg-bg);
   align-self: flex-end;
-  max-width: 90%;
-  margin-left: 10%;
+  /* Fit content width - removes fixed width */
+  width: fit-content;
+  max-width: 80%;
+  margin-left: auto;
 }
 
 .assistant-message {
   background-color: var(--bot-msg-bg);
   align-self: flex-start;
-  max-width: 90%;
-  margin-right: 10%;
+  max-width: 80%;
 }
 
 .message-avatar {
@@ -272,7 +336,7 @@ body {
 .input-form {
   display: flex;
   gap: 8px;
-  margin: 16px;
+  margin: 0 16px;
   padding: 16px;
   background-color: var(--input-bg);
   border-radius: 8px;
@@ -280,7 +344,7 @@ body {
   width: calc(100% - 32px);
 }
 
-.input-form input {
+.message-input {
   flex: 1;
   padding: 12px;
   font-size: 1rem;
@@ -288,6 +352,10 @@ body {
   background-color: transparent;
   color: var(--text-color);
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  max-height: 150px;
+  font-family: inherit;
 }
 
 .input-form button {
@@ -316,7 +384,7 @@ body {
 .chat-actions {
   display: flex;
   justify-content: center;
-  margin: 0 16px 16px 16px;
+  margin: 8px 16px 0 16px;
   width: calc(100% - 32px);
 }
 
@@ -334,10 +402,20 @@ body {
   background-color: var(--button-hover);
 }
 
+/* Adjust for multi-line text area */
+.message-input {
+  line-height: 1.5;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .header {
     padding: 12px 16px;
+    height: 56px; /* Smaller header on mobile */
+  }
+  
+  .main-content {
+    padding-top: 56px; /* Match smaller header height */
   }
   
   .message {
@@ -345,8 +423,10 @@ body {
   }
   
   .user-message, .assistant-message {
-    max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
+    max-width: 90%;
+  }
+  
+  .pinned-tab {
+    max-width: 150px;
   }
 }

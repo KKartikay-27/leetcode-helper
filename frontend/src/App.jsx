@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { FiSend, FiCode, FiMoon, FiSun } from "react-icons/fi";
 import ReactMarkdown from 'react-markdown';
@@ -14,10 +14,41 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(true);
   const [sessionId, setSessionId] = useState(null);
+  const [pinnedTab, setPinnedTab] = useState(null);
   
-  const messagesEndRef = React.useRef(null);
-  const inputRef = React.useRef(null);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const chatContainerRef = useRef(null);
   
+  // Load session history from local storage on initial load
+  useEffect(() => {
+    const savedSession = localStorage.getItem('leetcodeHelperSession');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        setSessionId(session.sessionId);
+        setMessages(session.messages);
+        setLeetCodeUrl(session.leetCodeUrl);
+        setShowUrlInput(false);
+        setPinnedTab(session.leetCodeUrl);
+      } catch (error) {
+        console.error("Error loading saved session:", error);
+      }
+    }
+  }, []);
+  
+  // Save session data whenever it changes
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      const sessionData = {
+        sessionId,
+        messages,
+        leetCodeUrl,
+      };
+      localStorage.setItem('leetcodeHelperSession', JSON.stringify(sessionData));
+    }
+  }, [sessionId, messages, leetCodeUrl]);
+
   // Toggle dark/light mode
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -28,14 +59,25 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   
-  React.useEffect(() => {
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  // Validate LeetCode URL
+  const isValidLeetCodeUrl = (url) => {
+    const leetCodeRegex = /^https?:\/\/(www\.)?leetcode\.com\/(problems|contest|explore)\/[\w-]+/i;
+    return leetCodeRegex.test(url);
+  };
   
   // Start a new session
   const startSession = async () => {
     if (!leetCodeUrl) {
       alert("Please enter a LeetCode problem URL");
+      return;
+    }
+    
+    if (!isValidLeetCodeUrl(leetCodeUrl)) {
+      alert("Please enter a valid LeetCode URL");
       return;
     }
     
@@ -49,6 +91,7 @@ function App() {
       
       setSessionId(response.data.sessionId);
       setShowUrlInput(false);
+      setPinnedTab(leetCodeUrl);
       
       // Add the first message from the backend
       if (response.data.firstMessage) {
@@ -121,10 +164,23 @@ function App() {
   
   // Reset chat to start a new session
   const resetChat = () => {
+    // Clear local storage
+    localStorage.removeItem('leetcodeHelperSession');
+    
     setShowUrlInput(true);
     setMessages([]);
     setLeetCodeUrl("");
     setSessionId(null);
+    setPinnedTab(null);
+  };
+  
+  // Handle key press for multiline input
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+    // Using Shift+Enter will naturally create a new line
   };
   
   // Custom renderer for code blocks
@@ -153,93 +209,110 @@ function App() {
           <FiCode className="logo-icon" />
           <h1>LeetCode Helper</h1>
         </div>
-        <button className="theme-toggle" onClick={toggleDarkMode}>
-          {darkMode ? <FiSun /> : <FiMoon />}
-        </button>
+        <div className="header-actions">
+          {pinnedTab && (
+            <div className="pinned-tab" onClick={() => window.open(pinnedTab, '_blank')}>
+              <FiCode className="tab-icon" />
+              <span className="tab-title">{new URL(pinnedTab).pathname.split('/').pop()}</span>
+            </div>
+          )}
+          <button className="theme-toggle" onClick={toggleDarkMode}>
+            {darkMode ? <FiSun /> : <FiMoon />}
+          </button>
+        </div>
       </div>
       
-      <div className="chat-container">
-        {showUrlInput ? (
-          <div className="url-input-container">
-            <h2>Get step-by-step guidance for solving LeetCode problems</h2>
-            
-            <div className="url-form">
-              <input
-                type="text"
-                placeholder="Paste LeetCode Problem URL"
-                value={leetCodeUrl}
-                onChange={(e) => setLeetCodeUrl(e.target.value)}
-                className="leetcode-url-input"
-              />
-              <button 
-                onClick={startSession}
-                className="start-session-btn"
-                disabled={loading}
+      <div className="main-content">
+        <div className="chat-container" ref={chatContainerRef}>
+          {/* Messages are always shown */}
+          <div className="messages-container">
+            {messages.map((msg, index) => (
+              <div 
+                key={index} 
+                className={`message ${msg.role === "user" ? "user-message" : "assistant-message"}`}
               >
-                {loading ? "Starting..." : "Start Session"} <FiCode />
-              </button>
-            </div>
+                <div className="message-avatar">
+                  {msg.role === "user" ? "👤" : "🤖"}
+                </div>
+                <div className="message-content">
+                  <ReactMarkdown
+                    components={{
+                      code: CodeBlock
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            ))}
+            
+            {loading && (
+              <div className="message assistant-message">
+                <div className="message-avatar">🤖</div>
+                <div className="message-content loading">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
           </div>
-        ) : (
-          <>
-            <div className="messages-container">
-              {messages.map((msg, index) => (
-                <div 
-                  key={index} 
-                  className={`message ${msg.role === "user" ? "user-message" : "assistant-message"}`}
+        </div>
+        
+        {/* Fixed bottom input area */}
+        <div className="input-area">
+          {/* Conditionally show URL input or message form */}
+          {showUrlInput ? (
+            <div className="url-input-container">
+              <h2>Get step-by-step guidance for solving LeetCode problems</h2>
+              
+              <div className="url-form">
+                <input
+                  type="text"
+                  placeholder="Paste LeetCode Problem URL"
+                  value={leetCodeUrl}
+                  onChange={(e) => setLeetCodeUrl(e.target.value)}
+                  className="leetcode-url-input"
+                />
+                <button 
+                  onClick={startSession}
+                  className="start-session-btn"
+                  disabled={loading}
                 >
-                  <div className="message-avatar">
-                    {msg.role === "user" ? "👤" : "🤖"}
-                  </div>
-                  <div className="message-content">
-                    <ReactMarkdown
-                      components={{
-                        code: CodeBlock
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              ))}
-              
-              {loading && (
-                <div className="message assistant-message">
-                  <div className="message-avatar">🤖</div>
-                  <div className="message-content loading">
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
+                  {loading ? "Starting..." : "Start Session"} <FiCode />
+                </button>
+              </div>
             </div>
-            
-            <form onSubmit={handleSubmit} className="input-form">
-              <input
-                ref={inputRef}
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Ask a question about the problem..."
-                disabled={loading}
-              />
-              <button type="submit" disabled={loading || !message}>
-                <FiSend />
-              </button>
-            </form>
-            
-            <div className="chat-actions">
-              <button onClick={resetChat} className="reset-btn">
-                New Problem
-              </button>
-            </div>
-          </>
-        )}
+          ) : (
+            <>
+              <form onSubmit={handleSubmit} className="input-form">
+                <textarea
+                  ref={inputRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Ask a question about the problem... (Shift+Enter for new line)"
+                  disabled={loading}
+                  className="message-input"
+                  rows={1}
+                />
+                <button type="submit" disabled={loading || !message}>
+                  <FiSend />
+                </button>
+              </form>
+              
+              <div className="chat-actions">
+                <button onClick={resetChat} className="reset-btn">
+                  New Problem
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
