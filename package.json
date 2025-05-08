@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "install-all": "concurrently \"cd backend && npm install\" \"cd frontend && npm install\"",
-    "start": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
-    "start-backend": "cd backend && node server.js",
-    "start-frontend": "cd frontend && npm run dev"
+    "start": "cd backend && node server.js",
+    "build": "cd frontend && npm run build"
   },
   "repository": {
     "type": "git",
