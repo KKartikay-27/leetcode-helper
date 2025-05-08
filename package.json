@@ -6,7 +6,7 @@
   "scripts": {
     "install-all": "concurrently \"cd backend && npm install\" \"cd frontend && npm install\"",
     "start": "cd backend && node server.js",
-    "build": "cd frontend && npm run build"
+    "build": "cd frontend && npm install && npm run build"
   },
   "repository": {
     "type": "git",
