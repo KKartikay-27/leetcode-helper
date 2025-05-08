@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/KKartikay-27/leetcode-helper/issues"
   },
-  "homepage": "https://github.com/KKartikay-27/leetcode-helper#readme"
+  "homepage": "https://github.com/KKartikay-27/leetcode-helper#readme",
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
 }
